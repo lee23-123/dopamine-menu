@@ -3,414 +3,404 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#14161d" />
+  <meta name="theme-color" content="#0d0f14" />
   <link rel="manifest" href="manifest.json" />
-  <title>DOPA-01 4x4</title>
+  <title>DOPA-01 Mobile</title>
   <style>
     :root {
       --bg: #0d0f14;
-      --key-shadow: #0d0e13;
+      --chassis: #181b23;
+      --border: #2c3140;
+      --key-bg: #232734;
+      --key-shadow: #0b0c10;
       --accent: #ff5a36;
       --green: #10b981;
-      --text: #f3f4f6;
-      --muted: #8b92a5;
+      --text: #f5f7fa;
+      --muted: #949cb0;
     }
 
     * {
       box-sizing: border-box;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
     }
 
     html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
+      min-height: 100%;
       background: var(--bg);
       color: var(--text);
+    }
+
+    body {
       display: flex;
       justify-content: center;
-      align-items: center;
-      overflow: hidden;
+      align-items: flex-start;
+      padding: 12px;
     }
 
-    /* 贴合 4x4 正方形小组件比例，同时限制电脑端最大尺寸 */
-    .widget-shell {
+    /* 手机端全宽顺手，电脑端限制在舒适掌机宽度 */
+    .app-shell {
       width: 100%;
-      height: 100%;
-      max-width: 380px;
-      max-height: 380px;
-      display: flex;
-      flex-direction: column;
-      padding: 7px;
-      gap: 6px;
-      background: linear-gradient(180deg, #1b1e27 0%, #12141a 100%);
-      border: 1.5px solid #2d3240;
-      border-radius: 16px;
-      overflow: hidden;
+      max-width: 440px;
+      background: linear-gradient(180deg, #1d202a 0%, #13151c 100%);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
     }
 
-    .top-strip {
+    /* 顶部状态栏 */
+    .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #0f1116;
-      border: 1px solid #252936;
-      border-radius: 8px;
-      padding: 4px 8px;
-      flex-shrink: 0;
-      min-height: 26px;
-      min-width: 0;
+      gap: 8px;
+      background: #0f1117;
+      border: 1px solid #242936;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
     }
 
-    .status-left {
+    .status-wrap {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       min-width: 0;
       flex: 1;
     }
 
     .led {
-      width: 7px;
-      height: 7px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--green);
-      box-shadow: 0 0 6px var(--green);
+      box-shadow: 0 0 8px var(--green);
       flex-shrink: 0;
     }
     .led.busy {
       background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
+      box-shadow: 0 0 10px var(--accent);
     }
 
-    .readout {
-      font-size: 0.68rem;
+    .status-text {
+      font-size: 0.82rem;
       font-weight: 700;
-      color: #cbd5e1;
+      color: #e2e8f0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .mini-btn {
-      background: #252936;
-      color: #e2e8f0;
-      border: 1px solid #363c4f;
-      border-radius: 6px;
-      padding: 2px 7px;
-      font-size: 0.64rem;
+    .btn-sm {
+      background: #252938;
+      color: #f1f5f9;
+      border: 1px solid #394054;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       flex-shrink: 0;
+      box-shadow: 0 3px 0 var(--key-shadow);
+    }
+    .btn-sm:active {
+      transform: translateY(2px);
+      box-shadow: none;
     }
 
-    .main-area {
-      flex: 1;
-      min-height: 0;
-      min-width: 0;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-    }
+    .step { display: none; }
+    .step.active { display: block; }
 
-    .step {
-      display: none;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
-    }
-    .step.active {
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* 4x4 格子内 3列 x 2行 严格对齐铺满 */
+    /* STEP 1: 6 个大触控方格 (5 分类 + 1 Roulette) */
     .grid-6 {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      width: 100%;
-      height: 100%;
-      min-width: 0;
-      min-height: 0;
+      gap: 10px;
     }
 
-    .key-tile {
-      width: 100%;
-      height: 100%;
+    .tile-btn {
+      aspect-ratio: 1 / 1.05;
       min-width: 0;
-      min-height: 0;
-      margin: 0;
-      overflow: hidden;
-      background: linear-gradient(180deg, #282c38 0%, #1e212b 100%);
-      border: 1px solid #363c4d;
-      border-radius: 11px;
+      background: linear-gradient(180deg, #272b3a 0%, #1d202b 100%);
+      border: 1px solid #363c4f;
+      border-radius: 18px;
       color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
-      padding: 4px;
+      gap: 6px;
+      padding: 8px 6px;
       cursor: pointer;
+      box-shadow: 0 4px 0 var(--key-shadow);
     }
-    .key-tile:active {
-      transform: scale(0.97);
+    .tile-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--key-shadow);
     }
 
-    .key-tile.roulette {
-      background: linear-gradient(180deg, #ff6847 0%, #d94323 100%);
-      border-color: #ff8a70;
-      color: #fff;
+    .tile-btn.roulette {
+      background: linear-gradient(180deg, #ff6947 0%, #d94120 100%);
+      border-color: #ff8d73;
+      color: #ffffff;
+      box-shadow: 0 4px 0 #781f0c;
+    }
+    .tile-btn.roulette:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #781f0c;
     }
 
     .tile-icon {
-      font-size: 1.3rem;
-      line-height: 1.05;
+      font-size: 1.85rem;
+      line-height: 1;
     }
-    .tile-name {
+    .tile-title {
       width: 100%;
-      font-size: 0.66rem;
+      font-size: 0.78rem;
       font-weight: 700;
       text-align: center;
-      line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .tile-meta {
-      font-size: 0.58rem;
-      opacity: 0.75;
-      line-height: 1;
+    .tile-sub {
+      font-size: 0.7rem;
+      opacity: 0.78;
     }
 
-    /* STEP 2: 选项列表 */
-    .sub-header {
+    /* STEP 2: 选项列表（手指好点、好滑、好输入） */
+    .nav-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 4px;
-      margin-bottom: 5px;
-      flex-shrink: 0;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .cat-heading {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-align: center;
+      flex: 1;
     }
 
     .ai-btn {
-      background: linear-gradient(180deg, #8b6eff 0%, #6544e8 100%);
-      border: 1px solid #a28bff;
-      color: #fff;
+      background: linear-gradient(180deg, #8b6eff 0%, #6342e6 100%);
+      border: 1px solid #a68cff;
+      color: #ffffff;
       font-weight: 700;
-      font-size: 0.64rem;
-      padding: 2px 7px;
-      border-radius: 6px;
+      font-size: 0.78rem;
+      padding: 8px 12px;
+      border-radius: 10px;
       cursor: pointer;
+      box-shadow: 0 3px 0 #321d8a;
     }
-
-    .options-scroll {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .ai-btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
     }
+    .ai-btn:disabled { opacity: 0.6; }
 
-    .opt-row {
+    .option-item {
       display: flex;
-      gap: 4px;
+      gap: 8px;
       align-items: stretch;
-      min-width: 0;
+      margin-bottom: 10px;
     }
 
-    .opt-btn {
+    .option-choose {
       flex: 1;
       min-width: 0;
-      text-align: left;
-      background: #222631;
+      min-height: 48px;
+      background: #222634;
       color: var(--text);
-      border: 1px solid #323848;
-      border-radius: 7px;
-      padding: 6px 8px;
-      font-size: 0.72rem;
+      border: 1px solid #343a4d;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      text-align: left;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 4px;
+      gap: 10px;
+      box-shadow: 0 3px 0 var(--key-shadow);
     }
-    .opt-btn span:first-child {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .option-choose:active {
+      transform: translateY(2px);
+      box-shadow: none;
     }
 
-    .del-btn {
-      background: #1b1e27;
+    .option-del {
+      width: 46px;
+      background: #1b1e29;
       color: var(--muted);
-      border: 1px solid #2e3342;
-      border-radius: 7px;
-      padding: 0 6px;
-      font-size: 0.68rem;
+      border: 1px solid #2f3547;
+      border-radius: 14px;
+      font-size: 0.88rem;
       cursor: pointer;
       flex-shrink: 0;
     }
 
-    .add-bar {
+    .add-box {
       display: flex;
-      gap: 4px;
-      margin-top: 5px;
-      flex-shrink: 0;
+      gap: 8px;
+      margin-top: 12px;
     }
 
     input {
       flex: 1;
       min-width: 0;
-      background: #0e1015;
+      min-height: 44px;
+      background: #0e1016;
       color: var(--text);
-      border: 1px solid #323848;
-      border-radius: 7px;
-      padding: 5px 7px;
-      font-size: 0.72rem;
+      border: 1px solid #343a4d;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
     }
 
-    /* STEP 3A & 3B: 锁定任务 / 鼓励语录 */
-    .center-box {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
+    /* STEP 3A & 3B: 锁定任务 / 正向鼓励语录 */
+    .lock-card {
+      background: #101218;
+      border: 1.5px solid #262b3a;
+      border-radius: 20px;
+      padding: 24px 18px;
       text-align: center;
-      background: #101217;
-      border: 1px solid #242834;
-      border-radius: 11px;
-      padding: 10px;
     }
 
-    .pill {
-      background: rgba(255, 90, 54, 0.18);
+    .badge {
+      display: inline-block;
+      background: rgba(255, 90, 54, 0.16);
       border: 1px solid rgba(255, 90, 54, 0.45);
-      color: #ff8c73;
-      font-size: 0.62rem;
+      color: #ff8e75;
+      font-size: 0.75rem;
       font-weight: 700;
-      padding: 2px 8px;
+      padding: 4px 12px;
       border-radius: 999px;
+      margin-bottom: 14px;
     }
 
-    .center-title {
-      font-size: 0.92rem;
+    .badge.done {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+    }
+
+    .task-text {
+      font-size: 1.2rem;
       font-weight: 700;
-      line-height: 1.3;
-      margin: 4px 0;
+      line-height: 1.45;
+      margin: 0 0 24px 0;
       word-break: break-word;
-      overflow-y: auto;
     }
 
-    .center-quote {
-      font-size: 0.78rem;
-      line-height: 1.35;
-      margin: 4px 0;
+    .quote-text {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin: 0 0 24px 0;
       color: #f8fafc;
-      overflow-y: auto;
     }
 
-    .action-btn {
+    .primary-btn {
       width: 100%;
-      padding: 8px;
-      font-size: 0.78rem;
+      min-height: 52px;
+      padding: 14px;
+      font-size: 0.98rem;
       font-weight: 700;
-      border-radius: 9px;
+      border-radius: 14px;
       border: 1px solid #34d399;
       background: linear-gradient(180deg, #10b981 0%, #059669 100%);
       color: #042117;
       cursor: pointer;
-      flex-shrink: 0;
+      box-shadow: 0 4px 0 #044e36;
+    }
+    .primary-btn:active {
+      transform: translateY(3px);
+      box-shadow: none;
     }
 
-    .action-btn.blue {
+    .primary-btn.blue {
       border-color: #60a5fa;
       background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-      color: #fff;
+      color: #ffffff;
+      box-shadow: 0 4px 0 #17347a;
+    }
+    .primary-btn.blue:active {
+      transform: translateY(3px);
+      box-shadow: none;
     }
 
-    #settingsOverlay {
+    /* API Key 面板 */
+    #keyPanel {
       display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(10, 11, 15, 0.95);
+      background: #12151d;
+      border: 1px solid #2e3447;
+      border-radius: 16px;
       padding: 12px;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      z-index: 20;
-    }
-    #settingsOverlay > * {
-      width: 100%;
-      max-width: 280px;
+      margin-bottom: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="widget-shell">
-    <div class="top-strip">
-      <div class="status-left">
+  <div class="app-shell">
+    <div class="top-bar">
+      <div class="status-wrap">
         <span class="led" id="ledDot"></span>
-        <span class="readout" id="readoutText">DOPA-01 // READY</span>
+        <span class="status-text" id="statusText">DOPA-01 // READY</span>
       </div>
-      <button class="mini-btn" onclick="toggleSettings()">KEY</button>
+      <button class="btn-sm" onclick="toggleKeyPanel()">KEY</button>
     </div>
 
-    <div class="main-area">
-      <section id="step-categories" class="step active">
-        <div class="grid-6" id="categoryGrid"></div>
-      </section>
-
-      <section id="step-options" class="step">
-        <div class="sub-header">
-          <button class="mini-btn" onclick="goToCategories()">◀ BACK</button>
-          <strong id="catHeader" style="font-size:0.72rem;">⚽ SPORTS</strong>
-          <button class="ai-btn" id="aiBtn" onclick="refreshWithAI()">✨ AI</button>
-        </div>
-        <div class="options-scroll" id="optionList"></div>
-        <div class="add-bar">
-          <input type="text" id="newItem" placeholder="Add option..." onkeydown="if(event.key==='Enter') addItem()" />
-          <button class="mini-btn" onclick="addItem()">+</button>
-        </div>
-      </section>
-
-      <section id="step-active-task" class="step">
-        <div class="center-box">
-          <span class="pill" id="activeCatPill">ACTIVE</span>
-          <div class="center-title" id="activeTaskText">Task</div>
-          <button class="action-btn" onclick="completeTask()">[ DONE ]</button>
-        </div>
-      </section>
-
-      <section id="step-quote" class="step">
-        <div class="center-box">
-          <span class="pill" style="background:rgba(16,185,129,0.18); border-color:rgba(16,185,129,0.45); color:#6ee7b7;">
-            COMPLETED
-          </span>
-          <div class="center-quote" id="quoteText">"Small steps build real momentum."</div>
-          <button class="action-btn blue" onclick="goToCategories()">[ MENU ]</button>
-        </div>
-      </section>
+    <div id="keyPanel">
+      <div style="font-size:0.78rem; font-weight:700; margin-bottom:8px;">GEMINI API KEY (THIS DEVICE)</div>
+      <div class="add-box" style="margin-top:0;">
+        <input type="password" id="apiKeyInput" placeholder="Paste AIzaSy... key" />
+        <button class="btn-sm" onclick="saveApiKey()">SAVE</button>
+      </div>
     </div>
-  </div>
 
-  <div id="settingsOverlay">
-    <div style="font-size:0.72rem; font-weight:700;">GEMINI API KEY</div>
-    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." />
-    <div style="display:flex; gap:6px;">
-      <button class="action-btn" style="padding:6px;" onclick="saveKey()">SAVE</button>
-      <button class="mini-btn" style="padding:6px 10px;" onclick="toggleSettings()">CLOSE</button>
-    </div>
+    <!-- STEP 1: 5 分类 + 1 Roulette -->
+    <section id="step-categories" class="step active">
+      <div class="grid-6" id="categoryGrid"></div>
+    </section>
+
+    <!-- STEP 2: 选项管理与选择 -->
+    <section id="step-options" class="step">
+      <div class="nav-row">
+        <button class="btn-sm" onclick="goToCategories()">◀ BACK</button>
+        <div class="cat-heading" id="catHeading">⚽ SPORTS</div>
+        <button class="ai-btn" id="aiBtn" onclick="refreshWithAI()">✨ AI REFRESH</button>
+      </div>
+
+      <div id="optionList"></div>
+
+      <div class="add-box">
+        <input type="text" id="newItemInput" placeholder="Add new option..." onkeydown="if(event.key==='Enter') addOption()" />
+        <button class="btn-sm" onclick="addOption()">+ ADD</button>
+      </div>
+    </section>
+
+    <!-- STEP 3A: 锁定当前任务直到按下 DONE -->
+    <section id="step-active-task" class="step">
+      <div class="lock-card">
+        <div class="badge" id="activeCatBadge">LOCKED TASK</div>
+        <h2 class="task-text" id="activeTaskText">Your task</h2>
+        <button class="primary-btn" onclick="completeTask()">[ DONE ]</button>
+      </div>
+    </section>
+
+    <!-- STEP 3B: 完成后显示正向鼓励语录 -->
+    <section id="step-quote" class="step">
+      <div class="lock-card">
+        <div class="badge done">COMPLETED</div>
+        <p class="quote-text" id="quoteText">"Small steps done consistently carry real momentum."</p>
+        <button class="primary-btn blue" onclick="goToCategories()">[ BACK TO MENU ]</button>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -458,7 +448,7 @@
     const encouragementQuotes = [
       "Small steps done consistently carry more power than bursts of intensity.",
       "You showed up for yourself today—that alone is a win.",
-      "Energy follows action. Even a small reset changes your day.",
+      "Energy follows action. Even a small reset changes the rhythm of your day.",
       "Progress doesn't have to be loud or dramatic to be real.",
       "Taking care of your energy is part of doing good work.",
       "One completed choice at a time—you're moving forward."
@@ -470,7 +460,7 @@
     let currentCat = "Sports";
     let isRolling = false;
 
-    function haptic(ms = 15) {
+    function haptic(ms = 18) {
       if (navigator.vibrate) navigator.vibrate(ms);
     }
 
@@ -480,8 +470,8 @@
       else dot.classList.remove("busy");
     }
 
-    function setReadout(text) {
-      document.getElementById("readoutText").textContent = text;
+    function setStatus(text) {
+      document.getElementById("statusText").textContent = text;
     }
 
     function saveData() {
@@ -499,43 +489,43 @@
       if (optionHistory[cat].length > 25) optionHistory[cat] = optionHistory[cat].slice(-25);
     }
 
-    function showStep(id) {
-      document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
+    function showStep(stepId) {
+      document.querySelectorAll(".step").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(stepId).classList.add("active");
     }
 
-    function getTotalCount() {
-      return categories.reduce((sum, c) => sum + (menu[c.id] || []).length, 0);
+    function getTotalOptions() {
+      return categories.reduce((sum, cat) => sum + (menu[cat.id] || []).length, 0);
     }
 
     function renderCategoryGrid() {
       const grid = document.getElementById("categoryGrid");
       const tiles = categories.map(cat => `
-        <button class="key-tile" onclick="openCategory('${cat.id}')">
+        <button class="tile-btn" onclick="openCategory('${cat.id}')">
           <span class="tile-icon">${cat.icon}</span>
-          <span class="tile-name">${cat.id}</span>
-          <span class="tile-meta">${(menu[cat.id] || []).length}</span>
+          <span class="tile-title">${cat.id}</span>
+          <span class="tile-sub">${(menu[cat.id] || []).length} opt</span>
         </button>
       `).join("");
 
       const roulette = `
-        <button class="key-tile roulette" id="rouletteBtn" onclick="runRoulette()">
+        <button class="tile-btn roulette" id="rouletteBtn" onclick="runRoulette()">
           <span class="tile-icon">🎲</span>
-          <span class="tile-name">Roulette</span>
-          <span class="tile-meta" id="rouletteMeta">${getTotalCount()}</span>
+          <span class="tile-title">Roulette</span>
+          <span class="tile-sub" id="rouletteSub">${getTotalOptions()} pool</span>
         </button>
       `;
 
       grid.innerHTML = tiles + roulette;
-      setReadout("SELECT CATEGORY OR ROULETTE");
+      setStatus("PICK A CATEGORY OR ROULETTE");
     }
 
     function openCategory(catId) {
       if (isRolling) return;
-      haptic(15);
+      haptic(18);
       currentCat = catId;
       const catObj = categories.find(c => c.id === catId);
-      document.getElementById("catHeader").textContent = `${catObj.icon} ${catObj.id.toUpperCase()}`;
+      document.getElementById("catHeading").textContent = `${catObj.icon} ${catObj.id.toUpperCase()}`;
       renderOptionsList();
       showStep("step-options");
     }
@@ -543,26 +533,26 @@
     function renderOptionsList() {
       const list = document.getElementById("optionList");
       const items = menu[currentCat] || [];
-      setReadout(`${currentCat.toUpperCase()} (${items.length})`);
+      setStatus(`${currentCat.toUpperCase()} // ${items.length} OPTIONS`);
 
       if (!items.length) {
-        list.innerHTML = `<div style="color:var(--muted); font-size:0.7rem; text-align:center; padding:8px;">No items. Add below or tap AI.</div>`;
+        list.innerHTML = `<p style="color:var(--muted); font-size:0.85rem; text-align:center; padding:16px 0;">No options yet. Add one below or tap AI REFRESH.</p>`;
         return;
       }
 
       list.innerHTML = items.map((item, idx) => `
-        <div class="opt-row">
-          <button class="opt-btn" onclick="chooseOption(${idx})">
+        <div class="option-item">
+          <button class="option-choose" onclick="chooseOption(${idx})">
             <span>${item}</span>
             <span style="color:var(--muted);">▶</span>
           </button>
-          <button class="del-btn" onclick="removeItem(${idx})">✕</button>
+          <button class="option-del" onclick="removeOption(${idx})">✕</button>
         </div>
       `).join("");
     }
 
     function chooseOption(idx) {
-      haptic(25);
+      haptic(28);
       const catObj = categories.find(c => c.id === currentCat);
       activeTask = {
         categoryLabel: `${catObj.icon} ${catObj.id.toUpperCase()}`,
@@ -576,19 +566,19 @@
     function renderActiveTask() {
       if (!activeTask) return;
       setLed(true);
-      document.getElementById("activeCatPill").textContent = activeTask.categoryLabel;
+      document.getElementById("activeCatBadge").textContent = activeTask.categoryLabel;
       document.getElementById("activeTaskText").textContent = activeTask.text;
-      setReadout("LOCKED // TAP DONE WHEN FINISHED");
+      setStatus("LOCKED // FINISH TO UNLOCK");
     }
 
     function completeTask() {
-      haptic([20, 30, 20]);
+      haptic([25, 35, 25]);
       activeTask = null;
       setLed(false);
       saveData();
       const q = encouragementQuotes[Math.floor(Math.random() * encouragementQuotes.length)];
       document.getElementById("quoteText").textContent = `"${q}"`;
-      setReadout("COMPLETED // NICE WORK");
+      setStatus("COMPLETED // GREAT JOB");
       showStep("step-quote");
     }
 
@@ -600,10 +590,11 @@
       showStep("step-categories");
     }
 
-    function addItem() {
-      const input = document.getElementById("newItem");
+    function addOption() {
+      const input = document.getElementById("newItemInput");
       const val = input.value.trim();
       if (!val) return;
+      haptic(15);
       menu[currentCat].push(val);
       recordHistory(currentCat, [val]);
       input.value = "";
@@ -611,7 +602,8 @@
       renderOptionsList();
     }
 
-    function removeItem(idx) {
+    function removeOption(idx) {
+      haptic(15);
       menu[currentCat].splice(idx, 1);
       saveData();
       renderOptionsList();
@@ -633,53 +625,64 @@
       if (btn) btn.disabled = true;
 
       let ticks = 0;
-      const totalTicks = 14;
+      const totalTicks = 15;
       const timer = setInterval(() => {
         const temp = pool[Math.floor(Math.random() * pool.length)];
-        setReadout(`ROLLING: ${temp.text}`);
+        setStatus(`ROLLING: ${temp.text}`);
         haptic(8);
         ticks++;
         if (ticks >= totalTicks) {
-          clearInterval(timer);
+          clearInterval(interval);
           activeTask = pool[Math.floor(Math.random() * pool.length)];
           saveData();
           if (btn) btn.disabled = false;
           isRolling = false;
-          haptic(35);
+          haptic(38);
           renderActiveTask();
           showStep("step-active-task");
         }
       }, 75);
     }
 
-    function toggleSettings() {
-      const box = document.getElementById("settingsOverlay");
-      box.style.display = box.style.display === "flex" ? "none" : "flex";
+    function toggleKeyPanel() {
+      const panel = document.getElementById("keyPanel");
+      panel.style.display = panel.style.display === "block" ? "none" : "block";
       document.getElementById("apiKeyInput").value = localStorage.getItem("geminiKey") || "";
     }
 
-    function saveKey() {
+    function saveApiKey() {
+      haptic(20);
       localStorage.setItem("geminiKey", document.getElementById("apiKeyInput").value.trim());
-      toggleSettings();
+      toggleKeyPanel();
+      alert("API Key saved on this device!");
     }
 
     async function refreshWithAI() {
       if (isRolling) return;
       const key = localStorage.getItem("geminiKey");
-      if (!key) return toggleSettings();
+      if (!key) {
+        toggleKeyPanel();
+        return alert("Paste your free Gemini API key first.");
+      }
 
+      haptic(20);
       setLed(true);
       const btn = document.getElementById("aiBtn");
-      btn.textContent = "...";
+      const oldText = btn.textContent;
+      btn.textContent = "GEN...";
       btn.disabled = true;
-      setReadout("AI SYNTHESIZING...");
+      setStatus(`AI SYNTHESIZING ${currentCat.toUpperCase()}...`);
 
       const currentItems = menu[currentCat] || [];
       const pastItems = optionHistory[currentCat] || [];
 
-      const prompt = `Curate 4 NEW, creative, energizing dopamine menu options for "${currentCat}" based on the user's previous/current options:
+      const prompt = `You are curating a personal dopamine menu for the category "${currentCat}".
+Here are the user's current and past options in this category:
 ${pastItems.map(i => `- ${i}`).join("\n")}
-Do not repeat: ${currentItems.join(", ")}. Keep each under 40 characters. Return ONLY a raw JSON array of 4 strings.`;
+
+Infer the user's preferences, tone, and effort style from those options, then generate 4 NEW, creative, specific, and engaging activity options for "${currentCat}" that fit their taste without duplicating existing options (${currentItems.join(", ")}).
+Keep each item clear and concise (under 48 characters).
+Return ONLY a raw JSON array of 4 strings, no markdown, no extra text.`;
 
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
@@ -695,14 +698,15 @@ Do not repeat: ${currentItems.join(", ")}. Keep each under 40 characters. Return
           menu[currentCat] = freshItems;
           recordHistory(currentCat, freshItems);
           saveData();
+          haptic(28);
           renderOptionsList();
         }
       } catch (err) {
-        alert("AI refresh failed—check API key.");
+        alert("AI refresh failed—check API key or network.");
         renderOptionsList();
       } finally {
         setLed(false);
-        btn.textContent = "✨ AI";
+        btn.textContent = oldText;
         btn.disabled = false;
       }
     }
